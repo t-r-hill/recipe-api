@@ -1,5 +1,6 @@
 package co.LabsProjects.recipeapi.controller;
 
+import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
 import co.LabsProjects.recipeapi.model.Recipe;
 import co.LabsProjects.recipeapi.service.RecipeService;
@@ -22,7 +23,7 @@ public class RecipeController {
         try {
             Recipe insertedRecipe = recipeService.createNewRecipe(recipe);
             return ResponseEntity.created(insertedRecipe.getLocationURI()).body(insertedRecipe);
-        } catch (IllegalStateException e) {
+        } catch (InvalidArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -46,11 +47,42 @@ public class RecipeController {
         }
     }
 
-    @GetMapping("/search/{name}")
+    @GetMapping("/search/name/{name}")
     public ResponseEntity<?> getRecipesByName(@PathVariable("name") String name) {
         try {
             List<Recipe> matchingRecipes = recipeService.getRecipesByName(name);
             return ResponseEntity.ok(matchingRecipes);
+        } catch (NoSuchRecipeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("search/rating/{rating}")
+    public ResponseEntity<?> getRecipesByAverageRatingGreaterThan(@PathVariable Double rating) {
+        try {
+            List<Recipe> recipes = recipeService.getRecipesByRatingGreaterThan(rating);
+            return ResponseEntity.ok(recipes);
+        } catch (NoSuchRecipeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("search/name/{name}/max-difficulty/{difficulty}")
+    public ResponseEntity<?> getRecipesByNameAndMaxDifficulty(@PathVariable String name,
+                                                              @PathVariable int difficultyRating) {
+        try {
+            List<Recipe> recipes = recipeService.getRecipesByNameWithMaxDifficulty(name, difficultyRating);
+            return ResponseEntity.ok(recipes);
+        } catch (NoSuchRecipeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("search/username/{username}")
+    public ResponseEntity<?> getRecipesByUsername(@PathVariable String username) {
+        try {
+            List<Recipe> recipes = recipeService.getRecipesByUsername(username);
+            return ResponseEntity.accepted().body(recipes);
         } catch (NoSuchRecipeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -72,7 +104,7 @@ public class RecipeController {
         try {
             Recipe returnedUpdatedRecipe = recipeService.updateRecipe(updatedRecipe, true);
             return ResponseEntity.ok(returnedUpdatedRecipe);
-        } catch (NoSuchRecipeException | IllegalStateException e) {
+        } catch (NoSuchRecipeException | InvalidArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

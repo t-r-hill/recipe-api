@@ -1,5 +1,6 @@
 package co.LabsProjects.recipeapi.service;
 
+import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
 import co.LabsProjects.recipeapi.model.Recipe;
 import co.LabsProjects.recipeapi.repo.RecipeRepo;
@@ -17,7 +18,7 @@ public class RecipeService {
     RecipeRepo recipeRepo;
 
     @Transactional
-    public Recipe createNewRecipe(Recipe recipe) throws IllegalStateException {
+    public Recipe createNewRecipe(Recipe recipe) throws InvalidArgumentException {
         recipe.validate();
         recipe = recipeRepo.save(recipe);
         recipe.generateLocationURI();
@@ -36,6 +37,12 @@ public class RecipeService {
         return recipe;
     }
 
+    public Recipe getRecipeByReviewId(Long reviewId){
+        Recipe recipe = recipeRepo.findByReviews_Id(reviewId);
+        recipe.generateLocationURI();
+        return recipe;
+    }
+
     public List<Recipe> getRecipesByName(String name) throws NoSuchRecipeException {
         List<Recipe> matchingRecipes = recipeRepo.findByNameContainingIgnoreCase(name);
 
@@ -46,12 +53,42 @@ public class RecipeService {
         return matchingRecipes;
     }
 
+    public List<Recipe> getRecipesByNameWithMaxDifficulty(String name, int difficultyRating) throws NoSuchRecipeException {
+        List<Recipe> recipes = recipeRepo.getByNameContainingIgnoreCaseAndDifficultyRatingLessThanEqual(name, difficultyRating);
+
+        if (recipes.isEmpty()){
+            throw new NoSuchRecipeException("No recipes could be found matching that criteria");
+        }
+
+        return recipes;
+    }
+
     public List<Recipe> getAllRecipes() throws NoSuchRecipeException {
         List<Recipe> recipes = recipeRepo.findAll();
 
         if (recipes.isEmpty()) {
             throw new NoSuchRecipeException("There are no recipes yet :( feel free to add one though");
         }
+        return recipes;
+    }
+
+    public List<Recipe> getRecipesByRatingGreaterThan(Double minimumRating) throws NoSuchRecipeException {
+        List<Recipe> recipes = recipeRepo.getByAverageReviewRatingGreaterThan(minimumRating);
+
+        if (recipes.isEmpty()){
+            throw new NoSuchRecipeException("No recipes could be found with a rating greater than " + minimumRating);
+        }
+
+        return recipes;
+    }
+
+    public List<Recipe> getRecipesByUsername(String username) throws NoSuchRecipeException {
+        List<Recipe> recipes = recipeRepo.getByUsername(username);
+
+        if (recipes.isEmpty()){
+            throw new NoSuchRecipeException("No recipes can be found for the user: " + username);
+        }
+
         return recipes;
     }
 
@@ -67,12 +104,13 @@ public class RecipeService {
     }
 
     @Transactional
-    public Recipe updateRecipe(Recipe recipe, boolean forceIdCheck) throws NoSuchRecipeException {
+    public Recipe updateRecipe(Recipe recipe, boolean forceIdCheck) throws NoSuchRecipeException, InvalidArgumentException {
         try {
             if (forceIdCheck) {
                 getRecipeById(recipe.getId());
             }
             recipe.validate();
+            recipe.setAverageReviewRating();
             Recipe savedRecipe = recipeRepo.save(recipe);
             savedRecipe.generateLocationURI();
             return savedRecipe;

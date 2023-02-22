@@ -1,5 +1,6 @@
 package co.LabsProjects.recipeapi.service;
 
+import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
 import co.LabsProjects.recipeapi.exception.NoSuchReviewException;
 import co.LabsProjects.recipeapi.model.Recipe;
@@ -51,31 +52,46 @@ public class ReviewService {
         return reviews;
     }
 
-    public Recipe postNewReview(Review review, Long recipeId) throws NoSuchRecipeException {
+    public Recipe postNewReview(Review review, Long recipeId) throws NoSuchRecipeException, InvalidArgumentException {
         Recipe recipe = recipeService.getRecipeById(recipeId);
+
+        if (review.getUsername().equals(recipe.getUsername())){
+            throw new InvalidArgumentException("Stop trying to upvote your own recipe!");
+        }
+        review.validate();
         recipe.getReviews().add(review);
+        recipe.setAverageReviewRating();
         recipeService.updateRecipe(recipe, false);
         return recipe;
     }
 
-    public Review deleteReviewById(Long id) throws NoSuchReviewException {
+//    @Transactional
+    public Review deleteReviewById(Long id) throws NoSuchReviewException, NoSuchRecipeException, InvalidArgumentException {
         Review review = getReviewById(id);
 
         if (null == review) {
             throw new NoSuchReviewException("The review you are trying to delete does not exist.");
         }
+
+        Recipe recipe = recipeService.getRecipeByReviewId(id);
         reviewRepo.deleteById(id);
+        reviewRepo.flush();
+        recipeService.updateRecipe(recipe, false);
         return review;
     }
 
-    public Review updateReviewById(Review reviewToUpdate) throws NoSuchReviewException {
+//    @Transactional
+    public Review updateReviewById(Review reviewToUpdate) throws NoSuchReviewException, NoSuchRecipeException, InvalidArgumentException {
         try {
             Review review = getReviewById(reviewToUpdate.getId());
         } catch (NoSuchReviewException e) {
             throw new NoSuchReviewException("The review you are trying to update. Maybe you meant to create one? If not," +
                     "please double check the ID you passed in.");
         }
+        reviewToUpdate.validate();
+        Recipe recipe = recipeService.getRecipeByReviewId(reviewToUpdate.getId());
         reviewRepo.save(reviewToUpdate);
+        recipeService.updateRecipe(recipe, false);
         return reviewToUpdate;
     }
 }

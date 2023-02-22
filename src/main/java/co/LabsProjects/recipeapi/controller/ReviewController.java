@@ -1,5 +1,6 @@
 package co.LabsProjects.recipeapi.controller;
 
+import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
 import co.LabsProjects.recipeapi.exception.NoSuchReviewException;
 import co.LabsProjects.recipeapi.model.Recipe;
@@ -53,7 +54,7 @@ public class ReviewController {
         try {
             Recipe insertedRecipe = reviewService.postNewReview(review, recipeId);
             return ResponseEntity.created(insertedRecipe.getLocationURI()).body(insertedRecipe);
-        } catch (NoSuchRecipeException e) {
+        } catch (NoSuchRecipeException | InvalidArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -63,7 +64,7 @@ public class ReviewController {
         try {
             Review review = reviewService.deleteReviewById(id);
             return ResponseEntity.ok(review);
-        } catch (NoSuchReviewException e) {
+        } catch (NoSuchReviewException | NoSuchRecipeException | InvalidArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -73,7 +74,7 @@ public class ReviewController {
         try {
             Review review = reviewService.updateReviewById(reviewToUpdate);
             return ResponseEntity.ok(review);
-        } catch (NoSuchReviewException e) {
+        } catch (NoSuchReviewException | NoSuchRecipeException | InvalidArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

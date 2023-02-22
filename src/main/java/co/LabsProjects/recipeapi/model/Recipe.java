@@ -1,5 +1,6 @@
 package co.LabsProjects.recipeapi.model;
 
+import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -26,18 +27,23 @@ public class Recipe {
     private String name;
 
     @Column(nullable = false)
+    private String username;
+
+    @Column(nullable = false)
     private int minutesToMake;
 
     @Column(nullable = false)
     private int difficultyRating;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "recipeId", nullable = false, foreignKey = @ForeignKey)
-    private Collection<Ingredient> ingredients = new ArrayList<>();
+    private double averageReviewRating;
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "recipeId", nullable = false, foreignKey = @ForeignKey)
-    private Collection<Step> steps = new ArrayList<>();
+    private Collection<Ingredient> ingredients;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "recipeId", nullable = false, foreignKey = @ForeignKey)
+    private Collection<Step> steps;
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "recipeId", nullable = false, foreignKey = @ForeignKey)
@@ -47,18 +53,21 @@ public class Recipe {
     @JsonIgnore
     private URI locationURI;
 
-    public void setDifficultyRating(int difficultyRating) {
-        if (difficultyRating < 0 || difficultyRating > 10) {
-            throw new IllegalStateException("Difficulty rating must be between 0 and 10.");
-        }
-        this.difficultyRating = difficultyRating;
-    }
-    public void validate() throws IllegalStateException {
+    public void validate() throws InvalidArgumentException {
         if (ingredients.size() == 0) {
-            throw new IllegalStateException("You have to have at least one ingredient for your recipe!");
+            throw new InvalidArgumentException("You have to have at least one ingredient for your recipe!");
         } else if (steps.size() == 0) {
-            throw new IllegalStateException("You have to include at least one step for your recipe!");
+            throw new InvalidArgumentException("You have to include at least one step for your recipe!");
+        } else if (name == null || name.isBlank()){
+            throw new InvalidArgumentException("Name must have a value");
+        } else if (username == null | username.isBlank()) {
+            throw new InvalidArgumentException("Username must have a value");
+        } else if (difficultyRating < 0 || difficultyRating > 10) {
+            throw new InvalidArgumentException("Difficulty rating must have a value between 1 and 10");
+        } else if (minutesToMake < 0) {
+            throw new InvalidArgumentException("A recipe must take at least 0 minutes to make");
         }
+
     }
 
     public void generateLocationURI() {
@@ -71,5 +80,12 @@ public class Recipe {
         } catch (URISyntaxException e) {
             //Exception should stop here.
         }
+    }
+
+    public void setAverageReviewRating(){
+        this.averageReviewRating = reviews.stream()
+                .mapToInt(Review::getRating)
+                .average()
+                .orElse(0.0);
     }
 }
