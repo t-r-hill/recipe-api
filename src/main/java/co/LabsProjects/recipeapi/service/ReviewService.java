@@ -8,6 +8,7 @@ import co.LabsProjects.recipeapi.model.Review;
 import co.LabsProjects.recipeapi.repo.ReviewRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ public class ReviewService {
         return recipe;
     }
 
-//    @Transactional
+    @Transactional
     public Review deleteReviewById(Long id) throws NoSuchReviewException, NoSuchRecipeException, InvalidArgumentException {
         Review review = getReviewById(id);
 
@@ -80,7 +81,7 @@ public class ReviewService {
         return review;
     }
 
-//    @Transactional
+    @Transactional
     public Review updateReviewById(Review reviewToUpdate) throws NoSuchReviewException, NoSuchRecipeException, InvalidArgumentException {
         try {
             Review review = getReviewById(reviewToUpdate.getId());
