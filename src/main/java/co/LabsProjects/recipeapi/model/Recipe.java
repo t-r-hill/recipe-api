@@ -20,7 +20,7 @@ import java.util.Collection;
 public class Recipe {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "recipe_generator")
     private long id;
 
     @Column(nullable = false)
@@ -54,13 +54,13 @@ public class Recipe {
     private URI locationURI;
 
     public void validate() throws InvalidArgumentException {
-        if (ingredients.size() == 0) {
+        if (ingredients == null || ingredients.size() == 0) {
             throw new InvalidArgumentException("You have to have at least one ingredient for your recipe!");
-        } else if (steps.size() == 0) {
+        } else if (steps == null || steps.size() == 0) {
             throw new InvalidArgumentException("You have to include at least one step for your recipe!");
         } else if (name == null || name.isBlank()){
             throw new InvalidArgumentException("Name must have a value");
-        } else if (username == null | username.isBlank()) {
+        } else if (username == null || username.isBlank()) {
             throw new InvalidArgumentException("Username must have a value");
         } else if (difficultyRating < 0 || difficultyRating > 10) {
             throw new InvalidArgumentException("Difficulty rating must have a value between 1 and 10");
