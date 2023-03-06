@@ -28,7 +28,7 @@ public class RecipeMainTest implements CommandLineRunner {
             Step step1 = Step.builder().description("put flour in bowl").stepNumber(1).build();
             Step step2 = Step.builder().description("eat it?").stepNumber(2).build();
 
-            Review review = Review.builder().description("tasted pretty bad").rating(2).username("idfk").build();
+//            Review review = Review.builder().description("tasted pretty bad").rating(2).username("idfk").build();
 
             Recipe recipe1 = Recipe.builder()
                     .name("test recipe")
@@ -36,8 +36,8 @@ public class RecipeMainTest implements CommandLineRunner {
                     .minutesToMake(2)
                     .ingredients(Set.of(ingredient))
                     .steps(Set.of(step1, step2))
-                    .reviews(Set.of(review))
-                    .username("bob")
+//                    .reviews(Set.of(review))
+//                    .username("bob")
                     .build();
 
             recipeRepo.save(recipe1);
@@ -49,7 +49,7 @@ public class RecipeMainTest implements CommandLineRunner {
                     .name("another test recipe")
                     .difficultyRating(10)
                     .minutesToMake(2)
-                    .username("Sally")
+//                    .username("Sally")
                     .build();
             recipeRepo.save(recipe2);
 
@@ -59,7 +59,7 @@ public class RecipeMainTest implements CommandLineRunner {
                     .name("another another test recipe")
                     .difficultyRating(5)
                     .minutesToMake(2)
-                    .username("Mark")
+//                    .username("Mark")
                     .build();
 
             recipeRepo.save(recipe3);
@@ -73,10 +73,10 @@ public class RecipeMainTest implements CommandLineRunner {
                             Ingredient.builder().name("chocolate").amount("1 bar").build()))
                     .steps(Set.of(
                             Step.builder().stepNumber(1).description("eat both items together").build()))
-                    .reviews(Set.of(
-                            Review.builder().username("ben").rating(10).description("this stuff is so good").build()
-                    ))
-                    .username("Billy")
+//                    .reviews(Set.of(
+//                            Review.builder().username("ben").rating(10).description("this stuff is so good").build()
+//                    ))
+//                    .username("Billy")
                     .build();
 
             recipeRepo.save(recipe4);

@@ -2,11 +2,14 @@ package co.LabsProjects.recipeapi.controller;
 
 import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
+import co.LabsProjects.recipeapi.model.CustomUserDetails;
 import co.LabsProjects.recipeapi.model.Recipe;
 import co.LabsProjects.recipeapi.service.RecipeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,8 +22,9 @@ public class RecipeController {
     RecipeService recipeService;
 
     @PostMapping
-    public ResponseEntity<?> createNewRecipe(@RequestBody Recipe recipe) {
+    public ResponseEntity<?> createNewRecipe(@RequestBody Recipe recipe, Authentication authentication  ) {
         try {
+            recipe.setUser((CustomUserDetails) authentication.getPrincipal());
             Recipe insertedRecipe = recipeService.createNewRecipe(recipe);
             return ResponseEntity.created(insertedRecipe.getLocationURI()).body(insertedRecipe);
         } catch (InvalidArgumentException e) {
@@ -89,6 +93,7 @@ public class RecipeController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasPermission(#id, 'Recipe', 'delete')")
     public ResponseEntity<?> deleteRecipeById(@PathVariable("id") Long id) {
         try {
             Recipe deletedRecipe = recipeService.deleteRecipeById(id);
@@ -100,6 +105,7 @@ public class RecipeController {
     }
 
     @PatchMapping
+    @PreAuthorize("hasPermission(#updatedRecipe.id, 'Recipe', 'edit')")
     public ResponseEntity<?> updateRecipe(@RequestBody Recipe updatedRecipe) {
         try {
             Recipe returnedUpdatedRecipe = recipeService.updateRecipe(updatedRecipe, true);

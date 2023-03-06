@@ -83,7 +83,7 @@ public class RecipeService {
     }
 
     public List<Recipe> getRecipesByUsername(String username) throws NoSuchRecipeException {
-        List<Recipe> recipes = recipeRepo.getByUsername(username);
+        List<Recipe> recipes = recipeRepo.getByUser_Username(username);
 
         if (recipes.isEmpty()){
             throw new NoSuchRecipeException("No recipes can be found for the user: " + username);

@@ -3,11 +3,14 @@ package co.LabsProjects.recipeapi.controller;
 import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
 import co.LabsProjects.recipeapi.exception.NoSuchReviewException;
+import co.LabsProjects.recipeapi.model.CustomUserDetails;
 import co.LabsProjects.recipeapi.model.Recipe;
 import co.LabsProjects.recipeapi.model.Review;
 import co.LabsProjects.recipeapi.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,8 +53,11 @@ public class ReviewController {
     }
 
     @PostMapping("/{recipeId}")
-    public ResponseEntity<?> postNewReview(@RequestBody Review review, @PathVariable("recipeId") Long recipeId) {
+    public ResponseEntity<?> postNewReview(@RequestBody Review review,
+                                           @PathVariable("recipeId") Long recipeId,
+                                           Authentication authentication) {
         try {
+            review.setUser((CustomUserDetails) authentication.getPrincipal());
             Recipe insertedRecipe = reviewService.postNewReview(review, recipeId);
             return ResponseEntity.created(insertedRecipe.getLocationURI()).body(insertedRecipe);
         } catch (NoSuchRecipeException | InvalidArgumentException e) {
@@ -60,6 +66,7 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasPermission(#id, 'Review', 'delete')")
     public ResponseEntity<?> deleteReviewById(@PathVariable("id") Long id) {
         try {
             Review review = reviewService.deleteReviewById(id);
@@ -70,6 +77,7 @@ public class ReviewController {
     }
 
     @PatchMapping
+    @PreAuthorize("hasPermission(#reviewToUpdate.id, 'Review', 'edit')")
     public ResponseEntity<?> updateReviewById(@RequestBody Review reviewToUpdate) {
         try {
             Review review = reviewService.updateReviewById(reviewToUpdate);

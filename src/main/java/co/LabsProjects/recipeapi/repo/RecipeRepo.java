@@ -15,5 +15,5 @@ public interface RecipeRepo extends JpaRepository<Recipe, Long> {
 
     List<Recipe> getByNameContainingIgnoreCaseAndDifficultyRatingLessThanEqual(String name, int difficultyRating);
 
-    List<Recipe> getByUsername(String username);
+    List<Recipe> getByUser_Username(String username);
 }
