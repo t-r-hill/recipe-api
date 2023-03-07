@@ -30,6 +30,7 @@ public class Review {
     @NotNull(message = "A review must have a rating")
     private int rating;
 
+    @JsonIgnore
     public String getAuthor() {
         return user.getUsername();
     }

@@ -1,15 +1,16 @@
 package co.LabsProjects.recipeapi;
 
-import co.LabsProjects.recipeapi.model.Ingredient;
-import co.LabsProjects.recipeapi.model.Recipe;
-import co.LabsProjects.recipeapi.model.Review;
-import co.LabsProjects.recipeapi.model.Step;
+import co.LabsProjects.recipeapi.model.*;
 import co.LabsProjects.recipeapi.repo.RecipeRepo;
+import co.LabsProjects.recipeapi.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 
 @SpringBootApplication
@@ -19,16 +20,42 @@ public class RecipeMainTest implements CommandLineRunner {
     @Autowired
     RecipeRepo recipeRepo;
 
+    @Autowired
+    PasswordEncoder encoder;
+
+    @Autowired
+    UserRepo userRepo;
+
     @Override
     public void run(String... args) throws Exception {
         System.out.println("STARTING WITH TEST DATABASE SETUP");
         if (recipeRepo.findAll().isEmpty()) {
 
+            UserMeta user1Meta = UserMeta.builder().name("user1").email("user1@email.com").build();
+            CustomUserDetails user1 = CustomUserDetails.builder()
+                    .username("user1")
+                    .password(encoder.encode("password1"))
+                    .userMeta(user1Meta)
+                    .authorities(Collections.singletonList(new Role(Role.Roles.ROLE_USER))).build();
+
+            userRepo.save(user1);
+
+            UserMeta user2Meta = UserMeta.builder().name("user2").email("user2@email.com").build();
+            CustomUserDetails user2 = CustomUserDetails.builder()
+                    .username("user2")
+                    .password(encoder.encode("password2"))
+                    .userMeta(user2Meta)
+                    .authorities(Arrays.asList(
+                            new Role(Role.Roles.ROLE_USER),
+                            new Role(Role.Roles.ROLE_ADMIN))).build();
+
+            userRepo.save(user2);
+
             Ingredient ingredient = Ingredient.builder().name("flour").state("dry").amount("2 cups").build();
             Step step1 = Step.builder().description("put flour in bowl").stepNumber(1).build();
             Step step2 = Step.builder().description("eat it?").stepNumber(2).build();
 
-//            Review review = Review.builder().description("tasted pretty bad").rating(2).username("idfk").build();
+            Review review = Review.builder().description("tasted pretty bad").rating(2).user(user1).build();
 
             Recipe recipe1 = Recipe.builder()
                     .name("test recipe")
@@ -36,8 +63,8 @@ public class RecipeMainTest implements CommandLineRunner {
                     .minutesToMake(2)
                     .ingredients(Set.of(ingredient))
                     .steps(Set.of(step1, step2))
-//                    .reviews(Set.of(review))
-//                    .username("bob")
+                    .reviews(Set.of(review))
+                    .user(user2)
                     .build();
 
             recipeRepo.save(recipe1);
@@ -49,7 +76,7 @@ public class RecipeMainTest implements CommandLineRunner {
                     .name("another test recipe")
                     .difficultyRating(10)
                     .minutesToMake(2)
-//                    .username("Sally")
+                    .user(user1)
                     .build();
             recipeRepo.save(recipe2);
 
@@ -59,7 +86,7 @@ public class RecipeMainTest implements CommandLineRunner {
                     .name("another another test recipe")
                     .difficultyRating(5)
                     .minutesToMake(2)
-//                    .username("Mark")
+                    .user(user2)
                     .build();
 
             recipeRepo.save(recipe3);
@@ -73,10 +100,10 @@ public class RecipeMainTest implements CommandLineRunner {
                             Ingredient.builder().name("chocolate").amount("1 bar").build()))
                     .steps(Set.of(
                             Step.builder().stepNumber(1).description("eat both items together").build()))
-//                    .reviews(Set.of(
-//                            Review.builder().username("ben").rating(10).description("this stuff is so good").build()
-//                    ))
-//                    .username("Billy")
+                    .reviews(Set.of(
+                            Review.builder().user(user2).rating(10).description("this stuff is so good").build()
+                    ))
+                    .user(user1)
                     .build();
 
             recipeRepo.save(recipe4);

@@ -2,11 +2,9 @@ package co.LabsProjects.recipeapi;
 
 import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
-import co.LabsProjects.recipeapi.model.Ingredient;
-import co.LabsProjects.recipeapi.model.Recipe;
-import co.LabsProjects.recipeapi.model.Review;
-import co.LabsProjects.recipeapi.model.Step;
+import co.LabsProjects.recipeapi.model.*;
 import co.LabsProjects.recipeapi.repo.RecipeRepo;
+import co.LabsProjects.recipeapi.repo.UserRepo;
 import co.LabsProjects.recipeapi.service.RecipeService;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -19,12 +17,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = RecipeApiApplication.class)
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RecipeApiApplicationTests {
 
@@ -49,15 +52,38 @@ class RecipeApiApplicationTests {
 	@MockBean
 	RecipeService recipeService;
 
+	@Autowired
+	PasswordEncoder encoder;
+
+	@Autowired
+	UserRepo userRepo;
+
 	@Test
 	@Order(1)
+	@WithUserDetails("user1")
 	public void testGetRecipeByIdSuccessBehavior() throws Exception {
+
+		UserMeta user1Meta = UserMeta.builder().name("user1").email("user1@email.com").build();
+		CustomUserDetails user1 = CustomUserDetails.builder()
+				.username("user1")
+				.password(encoder.encode("password1"))
+				.userMeta(user1Meta)
+				.authorities(Collections.singletonList(new Role(Role.Roles.ROLE_USER))).build();
+
+		UserMeta user2Meta = UserMeta.builder().name("user2").email("user2@email.com").build();
+		CustomUserDetails user2 = CustomUserDetails.builder()
+				.username("user2")
+				.password(encoder.encode("password2"))
+				.userMeta(user2Meta)
+				.authorities(Arrays.asList(
+						new Role(Role.Roles.ROLE_USER),
+						new Role(Role.Roles.ROLE_ADMIN))).build();
 
 		Ingredient ingredient = Ingredient.builder().name("flour").state("dry").amount("2 cups").build();
 		Step step1 = Step.builder().description("put flour in bowl").stepNumber(1).build();
 		Step step2 = Step.builder().description("eat it?").stepNumber(2).build();
 
-		Review review = Review.builder().description("tasted pretty bad").rating(2).username("idfk").build();
+		Review review = Review.builder().description("tasted pretty bad").rating(2).user(user1).build();
 
 		Recipe recipe1 = Recipe.builder()
 				.name("test recipe")
@@ -66,10 +92,11 @@ class RecipeApiApplicationTests {
 				.ingredients(Set.of(ingredient))
 				.steps(Set.of(step1, step2))
 				.reviews(Set.of(review))
-				.username("bob")
+				.user(user2)
 				.build();
 
 		when(recipeService.getRecipeById(anyLong())).thenReturn(recipe1);
+
 
 		//set up GET request
 		mockMvc.perform(get("/recipes/" + 1))
@@ -87,7 +114,8 @@ class RecipeApiApplicationTests {
 				.andExpect(jsonPath("reviews", hasSize(recipe1.getReviews().size())))
 				.andExpect(jsonPath("ingredients", hasSize(recipe1.getIngredients().size())))
 				.andExpect(jsonPath("steps", hasSize(recipe1.getSteps().size())))
-				.andExpect(jsonPath("username").value(recipe1.getUsername()));
+//				.andExpect(jsonPath("username").value(recipe1.getUsername()))
+				;
 	}
 
 	@Test
@@ -111,11 +139,27 @@ class RecipeApiApplicationTests {
 	@Order(3)
 	public void testGetAllRecipesSuccessBehavior() throws Exception {
 
+		UserMeta user1Meta = UserMeta.builder().name("user1").email("user1@email.com").build();
+		CustomUserDetails user1 = CustomUserDetails.builder()
+				.username("user1")
+				.password(encoder.encode("password1"))
+				.userMeta(user1Meta)
+				.authorities(Collections.singletonList(new Role(Role.Roles.ROLE_USER))).build();
+
+		UserMeta user2Meta = UserMeta.builder().name("user2").email("user2@email.com").build();
+		CustomUserDetails user2 = CustomUserDetails.builder()
+				.username("user2")
+				.password(encoder.encode("password2"))
+				.userMeta(user2Meta)
+				.authorities(Arrays.asList(
+						new Role(Role.Roles.ROLE_USER),
+						new Role(Role.Roles.ROLE_ADMIN))).build();
+
 		Ingredient ingredient = Ingredient.builder().name("flour").state("dry").amount("2 cups").build();
 		Step step1 = Step.builder().description("put flour in bowl").stepNumber(1).build();
 		Step step2 = Step.builder().description("eat it?").stepNumber(2).build();
 
-		Review review = Review.builder().description("tasted pretty bad").rating(2).username("idfk").build();
+		Review review = Review.builder().description("tasted pretty bad").rating(2).user(user1).build();
 
 		Recipe recipe1 = Recipe.builder()
 				.name("test recipe")
@@ -124,7 +168,7 @@ class RecipeApiApplicationTests {
 				.ingredients(Set.of(ingredient))
 				.steps(Set.of(step1, step2))
 				.reviews(Set.of(review))
-				.username("bob")
+				.user(user2)
 				.id(1)
 				.build();
 
@@ -135,7 +179,7 @@ class RecipeApiApplicationTests {
 				.name("another test recipe")
 				.difficultyRating(10)
 				.minutesToMake(2)
-				.username("Sally")
+				.user(user1)
 				.id(2)
 				.build();
 
@@ -145,7 +189,7 @@ class RecipeApiApplicationTests {
 				.name("another another test recipe")
 				.difficultyRating(5)
 				.minutesToMake(2)
-				.username("Mark")
+				.user(user2)
 				.id(3)
 				.build();
 
@@ -159,9 +203,9 @@ class RecipeApiApplicationTests {
 				.steps(Set.of(
 						Step.builder().stepNumber(1).description("eat both items together").build()))
 				.reviews(Set.of(
-						Review.builder().username("ben").rating(10).description("this stuff is so good").build()
+						Review.builder().user(user2).rating(10).description("this stuff is so good").build()
 				))
-				.username("Billy")
+				.user(user1)
 				.id(4)
 				.build();
 
@@ -200,12 +244,30 @@ class RecipeApiApplicationTests {
 
 	@Test
 	@Order(4)
+	@WithUserDetails("user2")
 	public void testCreateNewRecipeSuccessBehavior() throws Exception {
+
+		UserMeta user1Meta = UserMeta.builder().name("user1").email("user1@email.com").build();
+		CustomUserDetails user1 = CustomUserDetails.builder()
+				.username("user1")
+				.password(encoder.encode("password1"))
+				.userMeta(user1Meta)
+				.authorities(Collections.singletonList(new Role(Role.Roles.ROLE_USER))).build();
+
+		UserMeta user2Meta = UserMeta.builder().name("user2").email("user2@email.com").build();
+		CustomUserDetails user2 = CustomUserDetails.builder()
+				.username("user2")
+				.password(encoder.encode("password2"))
+				.userMeta(user2Meta)
+				.authorities(Arrays.asList(
+						new Role(Role.Roles.ROLE_USER),
+						new Role(Role.Roles.ROLE_ADMIN))).build();
+
 		Ingredient ingredient = Ingredient.builder().name("brown sugar").state("dry").amount("1 cup").build();
 		Step step1 = Step.builder().description("heat pan").stepNumber(1).build();
 		Step step2 = Step.builder().description("add sugar").stepNumber(2).build();
 
-		Review review = Review.builder().description("was just caramel").rating(3).username("idk").build();
+		Review review = Review.builder().description("was just caramel").rating(3).user(user1).build();
 
 		Recipe recipe = Recipe.builder()
 				.name("caramel in a pan")
@@ -214,7 +276,7 @@ class RecipeApiApplicationTests {
 				.ingredients(Set.of(ingredient))
 				.steps(Set.of(step1, step2))
 				.reviews(Set.of(review))
-				.username("test_user")
+				.user(user2)
 				.locationURI(new URI("http://localhost/recipes/new"))
 				.build();
 
@@ -250,12 +312,13 @@ class RecipeApiApplicationTests {
 
 						//confirm review data
 						.andExpect(jsonPath("reviews", hasSize(1)))
-						.andExpect(jsonPath("reviews[0].username").value("idk"))
+//						.andExpect(jsonPath("reviews[0].username").value("idk"))
 						.andReturn().getResponse();
 	}
 
 	@Test
 	@Order(5)
+	@WithUserDetails("user2")
 	public void testCreateNewRecipeFailureBehavior() throws Exception {
 
 		Recipe recipe = new Recipe();
@@ -301,12 +364,27 @@ class RecipeApiApplicationTests {
 	@Order(6)
 	public void testGetRecipesByNameSuccessBehavior() throws Exception {
 
+		UserMeta user1Meta = UserMeta.builder().name("user1").email("user1@email.com").build();
+		CustomUserDetails user1 = CustomUserDetails.builder()
+				.username("user1")
+				.password(encoder.encode("password1"))
+				.userMeta(user1Meta)
+				.authorities(Collections.singletonList(new Role(Role.Roles.ROLE_USER))).build();
+
+		UserMeta user2Meta = UserMeta.builder().name("user2").email("user2@email.com").build();
+		CustomUserDetails user2 = CustomUserDetails.builder()
+				.username("user2")
+				.password(encoder.encode("password2"))
+				.userMeta(user1Meta)
+				.authorities(Arrays.asList(
+						new Role(Role.Roles.ROLE_USER),
+						new Role(Role.Roles.ROLE_ADMIN))).build();
 
 		Ingredient ingredient = Ingredient.builder().name("flour").state("dry").amount("2 cups").build();
 		Step step1 = Step.builder().description("put flour in bowl").stepNumber(1).build();
 		Step step2 = Step.builder().description("eat it?").stepNumber(2).build();
 
-		Review review = Review.builder().description("tasted pretty bad").rating(2).username("idfk").build();
+		Review review = Review.builder().description("tasted pretty bad").rating(2).user(user1).build();
 
 		Recipe recipe1 = Recipe.builder()
 				.name("test recipe")
@@ -315,7 +393,7 @@ class RecipeApiApplicationTests {
 				.ingredients(Set.of(ingredient))
 				.steps(Set.of(step1, step2))
 				.reviews(Set.of(review))
-				.username("bob")
+				.user(user2)
 				.id(1)
 				.build();
 
@@ -326,7 +404,7 @@ class RecipeApiApplicationTests {
 				.name("another test recipe")
 				.difficultyRating(10)
 				.minutesToMake(2)
-				.username("Sally")
+				.user(user1)
 				.id(2)
 				.build();
 
@@ -336,7 +414,7 @@ class RecipeApiApplicationTests {
 				.name("another another test recipe")
 				.difficultyRating(5)
 				.minutesToMake(2)
-				.username("Mark")
+				.user(user2)
 				.id(3)
 				.build();
 
@@ -350,9 +428,9 @@ class RecipeApiApplicationTests {
 				.steps(Set.of(
 						Step.builder().stepNumber(1).description("eat both items together").build()))
 				.reviews(Set.of(
-						Review.builder().username("ben").rating(10).description("this stuff is so good").build()
+						Review.builder().user(user2).rating(10).description("this stuff is so good").build()
 				))
-				.username("Billy")
+				.user(user1)
 				.id(4)
 				.build();
 
@@ -431,7 +509,24 @@ class RecipeApiApplicationTests {
 
 	@Test
 	@Order(8)
+	@WithUserDetails("user2")
 	public void testDeleteRecipeByIdSuccessBehavior() throws Exception {
+
+		UserMeta user1Meta = UserMeta.builder().name("user1").email("user1@email.com").build();
+		CustomUserDetails user1 = CustomUserDetails.builder()
+				.username("user1")
+				.password(encoder.encode("password1"))
+				.userMeta(user1Meta)
+				.authorities(Collections.singletonList(new Role(Role.Roles.ROLE_USER))).build();
+
+		UserMeta user2Meta = UserMeta.builder().name("user2").email("user2@email.com").build();
+		CustomUserDetails user2 = CustomUserDetails.builder()
+				.username("user2")
+				.password(encoder.encode("password2"))
+				.userMeta(user1Meta)
+				.authorities(Arrays.asList(
+						new Role(Role.Roles.ROLE_USER),
+						new Role(Role.Roles.ROLE_ADMIN))).build();
 
 		Recipe recipe3 = Recipe.builder()
 				.steps(Set.of(Step.builder().description("test 2").build()))
@@ -439,7 +534,7 @@ class RecipeApiApplicationTests {
 				.name("another another test recipe")
 				.difficultyRating(5)
 				.minutesToMake(2)
-				.username("Mark")
+				.user(user1)
 				.id(3)
 				.build();
 
@@ -462,6 +557,7 @@ class RecipeApiApplicationTests {
 
 	@Test
 	@Order(9)
+	@WithUserDetails("user2")
 	public void testDeleteRecipeByIdFailureBehavior() throws Exception {
 
 		when(recipeService.deleteRecipeById(anyLong())).thenThrow(new NoSuchRecipeException("No recipe with ID -1 could be found. Could not delete."));

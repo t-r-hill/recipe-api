@@ -55,6 +55,7 @@ public class Recipe {
     @JsonIgnore
     private URI locationURI;
 
+    @JsonIgnore
     public String getAuthor() {
         return user.getUsername();
     }
@@ -66,8 +67,8 @@ public class Recipe {
             throw new InvalidArgumentException("You have to include at least one step for your recipe!");
         } else if (name == null || name.isBlank()){
             throw new InvalidArgumentException("Name must have a value");
-//        } else if (user == null) {
-//            throw new InvalidArgumentException("Username must have a value");
+        } else if (user == null) {
+            throw new InvalidArgumentException("Username must have a value");
         } else if (difficultyRating < 0 || difficultyRating > 10) {
             throw new InvalidArgumentException("Difficulty rating must have a value between 1 and 10");
         } else if (minutesToMake < 0) {
