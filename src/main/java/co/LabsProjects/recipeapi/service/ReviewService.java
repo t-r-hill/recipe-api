@@ -7,6 +7,9 @@ import co.LabsProjects.recipeapi.model.Recipe;
 import co.LabsProjects.recipeapi.model.Review;
 import co.LabsProjects.recipeapi.repo.ReviewRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,7 @@ public class ReviewService {
     @Autowired
     RecipeService recipeService;
 
+    @Cacheable(value = "reviews", key = "#id")
     public Review getReviewById(Long id) throws NoSuchReviewException {
         Optional<Review> review = reviewRepo.findById(id);
 
@@ -31,6 +35,7 @@ public class ReviewService {
         }
         return review.get();
     }
+
 
     public ArrayList<Review> getReviewByRecipeId(Long recipeId) throws NoSuchRecipeException, NoSuchReviewException {
         Recipe recipe = recipeService.getRecipeById(recipeId);
@@ -53,6 +58,7 @@ public class ReviewService {
         return reviews;
     }
 
+    @CachePut(value = "reviews", key = "#review.id")
     public Recipe postNewReview(Review review, Long recipeId) throws NoSuchRecipeException, InvalidArgumentException {
         Recipe recipe = recipeService.getRecipeById(recipeId);
 
@@ -67,6 +73,7 @@ public class ReviewService {
     }
 
     @Transactional
+    @CacheEvict(value = "reviews", key = "id")
     public Review deleteReviewById(Long id) throws NoSuchReviewException, NoSuchRecipeException, InvalidArgumentException {
         Review review = getReviewById(id);
 
@@ -81,6 +88,7 @@ public class ReviewService {
         return review;
     }
 
+    @CachePut(value = "reviews", key = "#reviewToUpdate.id")
     @Transactional
     public Review updateReviewById(Review reviewToUpdate) throws NoSuchReviewException, NoSuchRecipeException, InvalidArgumentException {
         try {

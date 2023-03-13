@@ -1,10 +1,14 @@
 package co.LabsProjects.recipeapi.service;
 
+import ch.qos.logback.core.boolex.EvaluationException;
 import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import co.LabsProjects.recipeapi.exception.NoSuchRecipeException;
 import co.LabsProjects.recipeapi.model.Recipe;
 import co.LabsProjects.recipeapi.repo.RecipeRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +22,7 @@ public class RecipeService {
     RecipeRepo recipeRepo;
 
     @Transactional
+    @CachePut(value = "recipes", key = "#recipe.id")
     public Recipe createNewRecipe(Recipe recipe) throws InvalidArgumentException {
         recipe.validate();
         recipe = recipeRepo.save(recipe);
@@ -25,6 +30,7 @@ public class RecipeService {
         return recipe;
     }
 
+    @Cacheable(value = "recipes", key = "#id")
     public Recipe getRecipeById(Long id) throws NoSuchRecipeException {
         Optional<Recipe> recipeOptional = recipeRepo.findById(id);
 
@@ -63,6 +69,7 @@ public class RecipeService {
         return recipes;
     }
 
+    @Cacheable(value = "recipes")
     public List<Recipe> getAllRecipes() throws NoSuchRecipeException {
         List<Recipe> recipes = recipeRepo.findAll();
 
@@ -92,6 +99,7 @@ public class RecipeService {
         return recipes;
     }
 
+    @CacheEvict(value = "recipes", key = "#id")
     @Transactional
     public Recipe deleteRecipeById(Long id) throws NoSuchRecipeException {
         try {
@@ -103,6 +111,7 @@ public class RecipeService {
         }
     }
 
+    @CachePut(value = "recipes", key = "#recipe.id")
     @Transactional
     public Recipe updateRecipe(Recipe recipe, boolean forceIdCheck) throws NoSuchRecipeException, InvalidArgumentException {
         try {

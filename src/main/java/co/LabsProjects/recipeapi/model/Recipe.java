@@ -3,9 +3,11 @@ package co.LabsProjects.recipeapi.model;
 import co.LabsProjects.recipeapi.exception.InvalidArgumentException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.hibernate.Hibernate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -17,7 +19,7 @@ import java.util.Collection;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Recipe {
+public class Recipe implements Serializable {
 
     @Id
     @GeneratedValue(generator = "recipe_generator")
@@ -47,7 +49,7 @@ public class Recipe {
     @JoinColumn(name = "recipeId", nullable = false, foreignKey = @ForeignKey)
     private Collection<Step> steps;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     @JoinColumn(name = "recipeId", nullable = false, foreignKey = @ForeignKey)
     private Collection<Review> reviews;
 
@@ -61,6 +63,13 @@ public class Recipe {
             return "";
         }
         return user.getUsername();
+    }
+
+    @PostLoad
+    public void initialize() {
+        Hibernate.initialize(this.ingredients);
+        Hibernate.initialize(this.steps);
+        Hibernate.initialize(this.reviews);
     }
 
     public void validate() throws InvalidArgumentException {

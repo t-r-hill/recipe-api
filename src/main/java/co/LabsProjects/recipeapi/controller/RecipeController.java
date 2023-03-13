@@ -6,6 +6,7 @@ import co.LabsProjects.recipeapi.model.CustomUserDetails;
 import co.LabsProjects.recipeapi.model.Recipe;
 import co.LabsProjects.recipeapi.service.RecipeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +21,9 @@ public class RecipeController {
 
     @Autowired
     RecipeService recipeService;
+
+    @Autowired
+    CacheManager cacheManager;
 
     @PostMapping
     public ResponseEntity<?> createNewRecipe(@RequestBody Recipe recipe, Authentication authentication  ) {
