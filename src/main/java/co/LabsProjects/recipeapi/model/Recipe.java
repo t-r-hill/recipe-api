@@ -57,6 +57,9 @@ public class Recipe {
 
     @JsonIgnore
     public String getAuthor() {
+        if(user == null){
+            return "";
+        }
         return user.getUsername();
     }
 
